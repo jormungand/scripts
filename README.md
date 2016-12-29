@@ -5,13 +5,14 @@ Useful scripts for iOS development
 
 
 #### find_missing_localization.sh
+
 Helper to find non-localized strings
 
 
 
 #### lint_specs.sh
 
-Batch `*.podspec` lint routine for private cocoapods development
+Batch `*.podspec` linter script for private cocoapods development
 
 
 
@@ -28,5 +29,3 @@ Boost Xcode by using RAM disk for DerivedData // inspired by [this article](http
 
 
 ###### TBC
-
-
