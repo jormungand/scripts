@@ -17,22 +17,28 @@ _volumeName="DerivedData"
 ##
 
 _forceMode=
-_unmountMode=
+_shouldUnmount=
+_shouldRemount=
 
-while getopts "uf" opt; do
+while getopts "ufr" opt; do
 	case "$opt" in
 		"u")
-			_unmountMode=1
+			_shouldUnmount=1
 			;;
 		"f")
 			_forceMode=1
 			;;
+		"r")
+			_shouldUnmount=1
+			_shouldRemount=1
+			;;
 		"?")
 			echo "Unknown option: $opt"
 			echo
-			echo "Usage: $0 [-f] [-u]"
+			echo "Usage: $0 [-f] [-u] [-r]"
 			echo -e "\t -f 	force clean the ramdisk"
 			echo -e "\t -u	unmount ramdisk"
+			echo -e "\t -r	unmount and re-mount ramdisk"
 			exit 1
 			;;
 	esac
@@ -76,7 +82,7 @@ formatDisk() {
 	local _volumeName="$2"
 	
 	echo "Formatting [${_diskName}] // volume name = [${_volumeName}]" >&2
-	newfs_hfs -v ${_volumeName} ${_diskName} >&2	
+	newfs_hfs -J 32M -v "${_volumeName}" "${_diskName}" >&2	
 }
 
 
@@ -86,7 +92,8 @@ mountDisk() {
 	
 	echo "Mounting [${_diskName}] at [${_mountPoint}]" >&2
 	mkdir -p ${_mountPoint} >&2
-	diskutil mount -mountPoint ${_mountPoint} ${_diskName} >&2
+#	diskutil mount -mountPoint "${_mountPoint}" "${_diskName}" >&2
+	mount -t hfs -o nodev -o noatime "${_diskName}" "${_mountPoint}"
 }
 
 
@@ -111,8 +118,14 @@ _diskName="$( mount | grep " on ${_mountPoint} " | awk '{ print $1 }' )"
 	echo "RAM disk [${_diskName}] is found"
 	
 	## unmount mode :: unmount and eject
-    [[ -n "${_unmountMode}" ]] && {
+    [[ -n "${_shouldUnmount}" ]] && {
 		unmountDisk ${_diskName}
+		
+		[[ -n "${_shouldRemount}" ]] && {
+			_diskName="$( allocateAndFormatDisk ${_sizeMB} ${_volumeName} )"
+			mountDisk ${_diskName} ${_mountPoint}
+		}
+		
 		exit
 	}
 	
@@ -130,10 +143,12 @@ _diskName="$( mount | grep " on ${_mountPoint} " | awk '{ print $1 }' )"
 } || {
 	## not mounted
 
-	[[ -n "${_unmountMode}" ]] && {
+	[[ -n "${_shouldUnmount}" ]] && {
 		echo "RAM disk is not found"
-		echo
-		exit 1
+		
+		[[ -n "${_shouldRemount}" ]] || {
+			exit 1
+		}
 	}
 	
 	_diskName="$( allocateAndFormatDisk ${_sizeMB} ${_volumeName} )"
@@ -143,5 +158,7 @@ _diskName="$( mount | grep " on ${_mountPoint} " | awk '{ print $1 }' )"
 echo
 echo "done"
 echo
+
+
 
 
