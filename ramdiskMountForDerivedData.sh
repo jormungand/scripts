@@ -19,6 +19,7 @@ _volumeName="DerivedData"
 _forceMode=
 _shouldUnmount=
 _shouldRemount=
+_shouldRestartXcode=
 
 while getopts "ufr" opt; do
 	case "$opt" in
@@ -48,10 +49,11 @@ done
 ## check if Xcode is running, kill if needed
 ##
 
-[[ -n "$( ps -ceo comm | grep -E '\bXcode$' )" ]] && {
+[[ -n "$( ps -ceo comm | grep -E '\bXcode$' )" && -z "${_forceMode}" ]] && {
 	echo -n "Xcode is running --> terminating ... "
 	killall Xcode
 	sleep 2
+	_shouldRestartXcode=1
 	echo "done"
 }
 
@@ -125,13 +127,19 @@ _diskName="$( mount | grep " on ${_mountPoint} " | awk '{ print $1 }' )"
 			_diskName="$( allocateAndFormatDisk ${_sizeMB} ${_volumeName} )"
 			mountDisk ${_diskName} ${_mountPoint}
 		}
-		
+
+		## restart Xcode
+		[[ -n "${_shouldRestartXcode}" ]] && {
+			open -a xcode
+		}
+
 		exit
 	}
 	
 	## force clean disk
     [[ -n "${_forceMode}" ]] && {
 		formatDisk ${_diskName} ${_volumeName}
+		rm -rf ${_mountPoint}/*
 		exit
 	}
 	
