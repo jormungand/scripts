@@ -1,6 +1,6 @@
 #!/bin/bash
 
-_scriptVersion="1.1.0"
+_scriptVersion="1.1.3"
 _debug=
 
 echo "------------------------------------------------------------------------------------------------------"
@@ -16,7 +16,7 @@ echo "--------------------------------------------------------------------------
 ##
 
 DEBUG() {
-	[[ -n "${_debug}" ]] && echo $@
+	[[ -n "${_debug}" ]] && echo -e "DEBUG: $@"
 }
 
 ##############################################################################################################
@@ -37,17 +37,17 @@ annotateIcon() {
 
 	xcrun pngcrush -revert-iphone-optimizations -q "${_file}" "${_tmpDir}/${_name}" >/dev/null 2>&1
 
-    _width="$(  identify -format %w "${_tmpDir}/${_name}" )"
-    _height="$( identify -format %h "${_tmpDir}/${_name}" )"
+	_dim="$( identify -format %w "${_tmpDir}/${_name}" )"
+	_margin="$(( ${_dim} / 6 ))"
+	_offset="$(( ${_dim} - ${_margin} ))"
 
-	_bandOffset="+0+$(( (${_height} / 6) * 5 ))"
-	_bandSize="${_width}x$(( ${_height} / 6 ))"
-	_labelSize="$(( (${_width} / 6) * 5 ))x$(( ${_height} / 6 ))"
+	_bandRegion="${_dim}x${_margin}+0+${_offset}"
+	_labelSize="${_offset}x${_margin}"
 
 	## TODO: save as "${_tmpDir}/${_name}-annotated.png", then run re-optimize using pngcrush 
 
-	convert "${_tmpDir}/${_name}" -region "${_bandSize}${_bandOffset}" -blur "10x10" +region \
-		-fill "#0004" -draw "rectangle 0,$(( (${_height} / 6) * 5 )),${_width},${_height}" \
+	convert "${_tmpDir}/${_name}" -region "${_bandRegion}" -blur "10x10" +region \
+		-fill "#0004" -draw "rectangle 0,${_offset},${_dim},${_dim}" \
 		\( -background "#fff0" -fill "#ffff" -gravity "center" -font "ArialB" -size "${_labelSize}" caption:"${_caption}" \) \
 		-gravity "south" -composite "${_file}" 	
 
@@ -87,10 +87,10 @@ _gs="$( which gs )"
 
 echo -e "🛠  Reading configuration:\n---"
 
-_infoPlist="${CONFIGURATION_BUILD_DIR}/${INFOPLIST_PATH}"
+_infoPlist="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
 
 [[ -f "${_infoPlist}" ]] || {
-	echo "⛔️  ERROR: Info plist is not found: INFOPLIST_PATH = [${INFOPLIST_PATH}], CONFIGURATION_BUILD_DIR = [${CONFIGURATION_BUILD_DIR}]"
+	echo "⛔️  ERROR: Info plist is not found: INFOPLIST_PATH = [${INFOPLIST_PATH}], TARGET_BUILD_DIR = [${TARGET_BUILD_DIR}]"
 	echo -e "\n\n----------------------------\n👎  CANCELLED\n"
 	exit;
 }
