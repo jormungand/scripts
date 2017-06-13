@@ -28,5 +28,11 @@ Boost Xcode by using RAM disk for DerivedData // inspired by [this article](http
 
 
 
+### iconVersioning.sh
+
+Remake of the [similar script by Krzysztof Zabłocki](https://github.com/krzysztofzablocki/IconOverlaying), written from scratch + works with Xcode Server CI
+
+
+
 ---
 ###### TBC
